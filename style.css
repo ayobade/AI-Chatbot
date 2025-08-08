@@ -205,6 +205,44 @@ body {
     font-size: 18px;
 }
 
+.search-bar .fa-microphone {
+    margin-right: 5px;
+}
+
+.search-bar .send-button {
+    background-color: #3a3a3a;
+    border: 1px solid #555;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s, opacity 0.2s;
+    flex-shrink: 0;
+}
+
+.search-bar .send-button:hover {
+    background-color: #4a4a4a;
+}
+
+.search-bar .send-button:active {
+    transform: scale(0.98);
+}
+
+.search-bar .send-button i {
+    font-size: 16px;
+}
+
+
+.search-bar .send-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #2f2f2f;
+    border-color: #4a4a4a;
+}
 @keyframes scrollRight {
     0% {
         transform: translateX(0);
