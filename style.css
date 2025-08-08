@@ -1,0 +1,243 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #1a1a1a;
+    color: white;
+    height: 100vh;
+    overflow-x: hidden;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px;
+}
+
+.hamburger-menu {
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.hamburger-menu:hover {
+    opacity: 0.8;
+}
+
+.header-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.header h1 {
+    color: white;
+    font-size: 18px;
+    font-weight: 500;
+    margin: 0;
+}
+
+.model-selector {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.model-dropdown {
+    background-color: #2a2a2a;
+    color: white;
+    border: 1px solid #444;
+    border-radius: 15px;
+    padding: 6px 30px 6px 12px;
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+}
+
+.model-dropdown option {
+    background-color: #2a2a2a;
+    color: white;
+}
+
+.model-selector i {
+    position: absolute;
+    right: 10px;
+    color: white;
+    font-size: 10px;
+    pointer-events: none;
+}
+
+.profile-image {
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.profile-image img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #333;
+}
+
+.profile-image:hover {
+    opacity: 0.8;
+}
+
+.help-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: calc(100vh - 200px);
+    text-align: center;
+    gap: 20px;
+}
+
+.help-text h2 {
+    color: white;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.suggested-topics {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 0 10px;
+    max-height: 120px;
+    overflow: hidden;
+}
+
+.topics-row {
+    display: flex;
+    gap: 12px;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 3px 0;
+    margin: 0 -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    width: max-content;
+    height: 35px;
+}
+
+.topics-row:nth-child(1) {
+    animation: scrollRight 60s linear infinite;
+}
+
+.topics-row:nth-child(2) {
+    animation: scrollLeft 50s linear infinite;
+}
+
+.topics-row:nth-child(3) {
+    animation: scrollRight 70s linear infinite;
+}
+
+.topics-row::-webkit-scrollbar {
+    display: none;
+}
+
+.topic {
+    background-color: #2a2a2ac1;
+    color: rgba(255, 255, 255, 0.581);
+    padding: 6px 15px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid #444444e5;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: fit-content;
+}
+
+.topic:hover {
+    background-color: #3a3a3a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.search-container {
+    padding: 20px;
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+}
+
+.search-bar {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 25px;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.search-bar input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+    outline: none;
+}
+
+.search-bar input::placeholder {
+    color: #888;
+}
+
+.search-bar i {
+    color: white;
+    font-size: 18px;
+}
+
+@keyframes scrollRight {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+@keyframes scrollLeft {
+    0% {
+        transform: translateX(-50%);
+    }
+    100% {
+        transform: translateX(0);
+    }
+}
+
+@media (min-width: 1024px) {
+    .help-text {
+        width: 1040px;
+        max-width: 1040px;
+        margin: 0 auto;
+    }
+
+    .suggested-topics {
+       border-radius: 30px;
+    }
+
+    .search-container {
+        width: 1040px;
+        max-width: 1040px;
+        margin: 0 auto;
+    }
+}
+
