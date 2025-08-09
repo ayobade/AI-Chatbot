@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const newChatBtn = document.querySelector('.new-chat-btn');
   const sidebarList = document.querySelector('.sidebar-list');
   const sidebarCloseBtn = document.querySelector('.sidebar-close');
+  const attachTrigger = document.querySelector('.attach-trigger');
+  const attachmentMenu = document.querySelector('.attachment-menu');
+  const fileInput = document.getElementById('file-input');
 
   
   const STORAGE_KEY = 'aichat.conversations.v1';
@@ -103,6 +106,45 @@ document.addEventListener('DOMContentLoaded', () => {
       sidebar.classList.remove('open');
     }
   });
+
+  if (attachTrigger && attachmentMenu) {
+    attachTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = attachmentMenu.classList.toggle('open');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!attachmentMenu.classList.contains('open')) return;
+      const target = e.target;
+      const clickedInside = attachmentMenu.contains(target) || (attachTrigger && attachTrigger.contains(target));
+      if (!clickedInside) {
+        attachmentMenu.classList.remove('open');
+      }
+    });
+  }
+
+  const uploadBtn = document.querySelector('.attachment-menu .upload');
+  const driveBtn = document.querySelector('.attachment-menu .drive');
+  if (uploadBtn && fileInput) {
+    uploadBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+  }
+  if (driveBtn) {
+    driveBtn.addEventListener('click', () => {
+      console.log('Add from drive clicked');
+      attachmentMenu && attachmentMenu.classList.remove('open');
+    });
+  }
+
+  if (fileInput) {
+    fileInput.addEventListener('change', () => {
+      const files = Array.from(fileInput.files || []);
+      if (!files.length) return;
+      console.log('Selected files:', files.map(f => ({ name: f.name, size: f.size })));
+      attachmentMenu && attachmentMenu.classList.remove('open');
+    });
+  }
 
  
   if (newChatBtn) {

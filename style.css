@@ -373,6 +373,55 @@ body {
     font-size: 18px;
 }
 
+.attach-trigger {
+    background: transparent;
+    border: none;
+    color: #fff;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.attachment-menu {
+    position: absolute;
+    bottom: 70px;
+    left: 30px;
+    background: #1f1f1f;
+    border: 1px solid #333;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    padding: 8px;
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 30;
+}
+
+.attachment-menu.open {
+    display: flex;
+}
+
+.attachment-menu .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    color: #eee;
+    border-radius: 8px;
+    cursor: pointer;
+    min-width: 200px;
+    text-align: left;
+}
+
+.attachment-menu .menu-item:hover {
+    background: #2a2a2a;
+}
+
 .search-bar .fa-microphone {
     margin-right: 5px;
 }

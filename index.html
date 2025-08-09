@@ -30,7 +30,7 @@
        </div>
 
 
-<aside class="sidebar" aria-label="Chat history">
+<aside class="sidebar">
     <div class="sidebar-header">
         <span>Chats</span>
         <button class="new-chat-btn" aria-label="Create new chat">
@@ -120,10 +120,23 @@
     
     <div class="search-container">
         <div class="search-bar">
-            <i class="fas fa-plus"></i>
+            <button class="attach-trigger" title="Add">
+                <i class="fas fa-plus"></i>
+            </button>
+            <input type="file" id="file-input" multiple hidden>
+            <div class="attachment-menu">
+                <button class="menu-item upload">
+                    <i class="fas fa-upload"></i>
+                    <span>Upload files</span>
+                </button>
+                <button class="menu-item drive">
+                    <i class="fas fa-cloud"></i>
+                    <span>Add from drive</span>
+                </button>
+            </div>
             <input type="text" placeholder="Search anything...">
              <i class="fas fa-microphone"></i>
-             <button class="send-button" aria-label="Send message" title="Send" disabled>
+             <button class="send-button" title="Send" disabled>
                  <i class="fas fa-paper-plane"></i>
              </button>
         </div>
