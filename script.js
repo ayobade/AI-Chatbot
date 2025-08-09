@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const inputEl = document.querySelector('.search-bar input');
+  const inputEl = document.querySelector('.search-bar .chat-input');
   const sendButton = document.querySelector('.send-button');
   const topics = document.querySelectorAll('.topic');
   const helpEl = document.querySelector('.help-text');
@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const attachTrigger = document.querySelector('.attach-trigger');
   const attachmentMenu = document.querySelector('.attachment-menu');
   const fileInput = document.getElementById('file-input');
+  const profileImage = document.querySelector('.profile-image');
+  const profileMenu = document.querySelector('.profile-menu');
+  const logoutBtn = document.querySelector('.logout-btn');
 
   
   const STORAGE_KEY = 'aichat.conversations.v1';
@@ -106,6 +109,37 @@ document.addEventListener('DOMContentLoaded', () => {
       sidebar.classList.remove('open');
     }
   });
+
+ 
+  if (profileImage && profileMenu) {
+    const toggleProfileMenu = (show) => {
+      if (show === undefined) {
+        profileMenu.classList.toggle('open');
+      } else if (show) {
+        profileMenu.classList.add('open');
+      } else {
+        profileMenu.classList.remove('open');
+      }
+    };
+
+    profileImage.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleProfileMenu();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!profileMenu.classList.contains('open')) return;
+      const target = e.target;
+      const inside = profileMenu.contains(target) || profileImage.contains(target);
+      if (!inside) toggleProfileMenu(false);
+    });
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      alert("Can't log you out right now");
+    });
+  }
 
   if (attachTrigger && attachmentMenu) {
     attachTrigger.addEventListener('click', (e) => {
