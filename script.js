@@ -222,27 +222,28 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function generateLocalAssistantReply(userMessage) {
-    const model =
-      document.querySelector(".model-dropdown")?.value ||
-      "openai/gpt-3.5-turbo";
-    const API_KEY =
-      "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";
-    const api_base = "https://openrouter.ai/api/v1/chat/completions";
-
-    const convo = conversations.find((c) => c.id === activeConversationId);
-    const validChatHistory = (convo?.messages || []).filter(
-      (m) => m.role && m.content && typeof m.content === "string"
-    );
-
-    const messagesToSend = [
-      ...validChatHistory,
-      {
-        role: "user",
-        content: `${userMessage}?`,
-      },
-    ];
-
     try {
+      const model =
+        document.querySelector(".model-dropdown")?.value ||
+        "openai/gpt-3.5-turbo";
+      const API_KEY =
+        "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";
+
+      const api_base = "https://openrouter.ai/api/v1/chat/completions";
+
+      const convo = conversations.find((c) => c.id === activeConversationId);
+      const validChatHistory = (convo?.messages || []).filter(
+        (m) => m.role && m.content && typeof m.content === "string"
+      );
+
+      const messagesToSend = [
+        ...validChatHistory,
+        {
+          role: "user",
+          content: `${userMessage}?`,
+        },
+      ];
+
       const response = await fetch(api_base, {
         method: "POST",
         headers: {
@@ -261,10 +262,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const result = data.choices?.[0]?.message?.content || "No response";
       console.log(result);
 
-      return `You said: ${result}`;
+      return `${result}`;
     } catch (error) {
-      console.error(error.message);
-      return `${error.message}. Check your network`;
+      console.log();
+      return `${error.message}`;
     }
   }
 
