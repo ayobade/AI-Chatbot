@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const profileImage = document.querySelector('.profile-image');
   const profileMenu = document.querySelector('.profile-menu');
   const logoutBtn = document.querySelector('.logout-btn');
+  const themeToggleBtn = document.querySelector('.theme-toggle-btn');
 
   
   const STORAGE_KEY = 'aichat.conversations.v1';
@@ -138,6 +139,31 @@ document.addEventListener('DOMContentLoaded', () => {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       alert("Can't log you out right now");
+    });
+  }
+
+ 
+  const THEME_KEY = 'aichat.theme.v1';
+  const applyTheme = (theme) => {
+    const body = document.body;
+    if (theme === 'light') {
+      body.classList.add('theme-light');
+      if (themeToggleBtn) themeToggleBtn.textContent = 'Switch to Dark mode';
+    } else {
+      body.classList.remove('theme-light');
+      if (themeToggleBtn) themeToggleBtn.textContent = 'Switch to Light mode';
+    }
+  };
+
+  const savedTheme = localStorage.getItem(THEME_KEY) || 'dark';
+  applyTheme(savedTheme);
+
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      const current = document.body.classList.contains('theme-light') ? 'light' : 'dark';
+      const next = current === 'light' ? 'dark' : 'light';
+      localStorage.setItem(THEME_KEY, next);
+      applyTheme(next);
     });
   }
 
