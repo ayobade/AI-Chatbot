@@ -21,8 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const modelDropdown = document.querySelector('.model-dropdown');
 
   const STORAGE_KEY = 'aichat.conversations.v1';
-  const OPENROUTER_API_KEY = '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';
-  const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
   let currentModel = 'anthropic/claude-3.5-sonnet';
   const THEME_KEY = 'aichat.theme';
   const SPEECH_INACTIVITY_MS = 5000;
@@ -290,19 +288,14 @@ document.addEventListener('DOMContentLoaded', () => {
         { role: 'user', content: message }
       ];
       
-      const response = await fetch(OPENROUTER_URL, {
+      const response = await fetch('/.netlify/functions/chat', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'AIChatbot'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           model: currentModel,
-          messages: apiMessages,
-          max_tokens: 1000,
-          temperature: 0.7
+          messages: apiMessages
         })
       });
       
