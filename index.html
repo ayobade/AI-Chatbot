@@ -126,6 +126,14 @@
     <div class="chat-container" ></div>
     
     <div class="search-container">
+        <div class="mic-visual">
+            <div class="mic-anim">
+                <span class="ripple"></span>
+                <span class="ripple delay"></span>
+                <span class="dot"><i class="fas fa-microphone"></i></span>
+            </div>
+            <span class="label">Listening...</span>
+        </div>
         <div class="search-bar">
             <button class="attach-trigger" title="Add">
                 <i class="fas fa-plus"></i>
@@ -141,8 +149,8 @@
                     <span>Add from drive</span>
                 </button>
             </div>
-            <input type="text" class="chat-input" placeholder="Ask anything...">
-             <i class="fas fa-microphone"></i>
+            <textarea class="chat-input" placeholder="Ask anything..." rows="1"></textarea>
+             <i class="fas fa-microphone mic-toggle"></i>
              <button class="send-button" title="Send" disabled>
                  <i class="fas fa-paper-plane"></i>
              </button>

@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const profileMenu = document.querySelector('.profile-menu');
   const logoutBtn = document.querySelector('.logout-btn');
   const themeToggleBtn = document.querySelector('.theme-toggle-btn');
+  const micIcon = document.querySelector('.search-bar .mic-toggle');
+  const micVisual = document.querySelector('.mic-visual');
 
   
   const STORAGE_KEY = 'aichat.conversations.v1';
@@ -65,6 +67,23 @@ document.addEventListener('DOMContentLoaded', () => {
     handleSendMessage(message);
     inputEl.value = '';
     inputEl.focus();
+    // Reset textarea height if multiline
+    if (inputEl.tagName === 'TEXTAREA') {
+      inputEl.style.height = 'auto';
+    }
+    // Close attachments and clear file selection
+    if (attachmentMenu) attachmentMenu.classList.remove('open');
+    if (fileInput) fileInput.value = '';
+    // Reset mic state and visual if recording
+    if (recognition && isListening) {
+      try { userRequestedStop = true; recognition.stop(); } catch(_) {}
+    }
+    if (micIcon) {
+      micIcon.classList.remove('recording');
+      micIcon.classList.remove('fa-stop');
+      micIcon.classList.add('fa-microphone');
+    }
+    if (micVisual) micVisual.classList.remove('active');
     updateSendButtonState();
   };
 
@@ -80,8 +99,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    inputEl.addEventListener('input', updateSendButtonState);
+    inputEl.addEventListener('input', () => {
+      autoGrowTextarea(inputEl);
+      updateSendButtonState();
+    });
    
+    autoGrowTextarea(inputEl);
     updateSendButtonState();
   }
 
@@ -165,6 +188,129 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem(THEME_KEY, next);
       applyTheme(next);
     });
+  }
+
+
+  let recognition = null;
+  let isListening = false;
+  let speechBaseValue = '';
+  let speechFinalText = '';
+  let userRequestedStop = false;
+  let inactivityTimerId = null;
+  const SPEECH_INACTIVITY_MS = 5000;
+
+  function ensureRecognition() {
+    if (recognition) return recognition;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return null;
+    recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = true;
+    recognition.continuous = true;
+
+    recognition.onstart = () => {
+      isListening = true;
+      if (micIcon) {
+        micIcon.classList.add('recording');
+        micIcon.classList.remove('fa-microphone');
+        micIcon.classList.add('fa-stop');
+      }
+      if (micVisual) micVisual.classList.add('active');
+      if (inputEl) speechBaseValue = inputEl.value || '';
+      speechFinalText = '';
+      scheduleInactivityStop();
+    };
+
+    recognition.onerror = () => {
+      isListening = false;
+      if (micIcon) {
+        micIcon.classList.remove('recording');
+        micIcon.classList.remove('fa-stop');
+        micIcon.classList.add('fa-microphone');
+      }
+      if (micVisual) micVisual.classList.remove('active');
+    };
+
+    recognition.onend = () => {
+      // If not explicitly stopped and we were listening, restart until inactivity timeout fires
+      if (!userRequestedStop && isListening) {
+        try { recognition.start(); } catch (_) {}
+        return;
+      }
+      isListening = false;
+      if (micIcon) {
+        micIcon.classList.remove('recording');
+        micIcon.classList.remove('fa-stop');
+        micIcon.classList.add('fa-microphone');
+      }
+      if (micVisual) micVisual.classList.remove('active');
+      clearInactivityStop();
+      updateSendButtonState();
+    };
+
+    recognition.onresult = (event) => {
+      if (!inputEl) return;
+      let interimTranscript = '';
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i];
+        if (result.isFinal) finalTranscript += result[0].transcript;
+        else interimTranscript += result[0].transcript;
+      }
+      // Accumulate only new final text, and render base + (final + interim)
+      if (finalTranscript) speechFinalText += finalTranscript;
+      const suffix = (speechFinalText + (interimTranscript || '')).trimStart();
+      const display = [speechBaseValue.trim(), suffix].filter(Boolean).join(' ').replace(/\s+/g, ' ');
+      inputEl.value = display;
+      autoGrowTextarea(inputEl);
+      updateSendButtonState();
+      scheduleInactivityStop();
+    };
+    return recognition;
+  }
+
+  function autoGrowTextarea(el) {
+    if (!el || el.tagName !== 'TEXTAREA') return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+  }
+
+  if (micIcon) {
+    micIcon.addEventListener('click', () => {
+      const rec = ensureRecognition();
+      if (!rec) {
+        alert('Voice input is not supported in this browser.');
+        return;
+      }
+      try {
+        if (!isListening) {
+          userRequestedStop = false;
+          rec.start();
+        } else {
+          userRequestedStop = true;
+          rec.stop();
+        }
+      } catch (_) {
+       
+      }
+    });
+  }
+
+  function scheduleInactivityStop() {
+    clearInactivityStop();
+    inactivityTimerId = setTimeout(() => {
+      if (recognition && isListening) {
+        userRequestedStop = true; // prevent auto-restart
+        try { recognition.stop(); } catch (_) {}
+      }
+    }, SPEECH_INACTIVITY_MS);
+  }
+
+  function clearInactivityStop() {
+    if (inactivityTimerId) {
+      clearTimeout(inactivityTimerId);
+      inactivityTimerId = null;
+    }
   }
 
   if (attachTrigger && attachmentMenu) {
