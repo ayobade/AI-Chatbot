@@ -324,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatEl.removeChild(chatEl.lastElementChild);
       }
       
-      const errorMessage = `Error: ${error.message}. Please check the console for details.`;
+      const errorMessage = `Error: ${error.message}. Please try switching to a different AI model and try again. `;
       appendMessage('assistant', errorMessage);
       
       addMessageToConversation(activeConversationId, { role: 'assistant', content: errorMessage });
