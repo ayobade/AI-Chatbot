@@ -18,10 +18,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const themeToggleBtn = document.querySelector('.theme-toggle-btn');
   const micIcon = document.querySelector('.search-bar .mic-toggle');
   const micVisual = document.querySelector('.mic-visual');
+  const modelDropdown = document.querySelector('.model-dropdown');
 
-  
   const STORAGE_KEY = 'aichat.conversations.v1';
-  let conversations = loadConversations(); 
+  const OPENROUTER_API_KEY = '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';
+  const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+  let currentModel = 'anthropic/claude-3.5-sonnet';
+  const THEME_KEY = 'aichat.theme';
+  const SPEECH_INACTIVITY_MS = 5000;
+
+  let conversations = loadConversations();
   let activeConversationId = conversations.length ? conversations[0].id : null;
   if (!activeConversationId) {
     activeConversationId = createNewConversation().id;
@@ -53,7 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   bindTopicHandlers();
 
-  
   const send = () => {
     if (!inputEl) return;
     const message = inputEl.value.trim();
@@ -67,14 +72,11 @@ document.addEventListener('DOMContentLoaded', () => {
     handleSendMessage(message);
     inputEl.value = '';
     inputEl.focus();
-    // Reset textarea height if multiline
     if (inputEl.tagName === 'TEXTAREA') {
       inputEl.style.height = 'auto';
     }
-    // Close attachments and clear file selection
     if (attachmentMenu) attachmentMenu.classList.remove('open');
     if (fileInput) fileInput.value = '';
-    // Reset mic state and visual if recording
     if (recognition && isListening) {
       try { userRequestedStop = true; recognition.stop(); } catch(_) {}
     }
@@ -98,88 +100,50 @@ document.addEventListener('DOMContentLoaded', () => {
         send();
       }
     });
-
     inputEl.addEventListener('input', () => {
-      autoGrowTextarea(inputEl);
       updateSendButtonState();
+      if (inputEl.tagName === 'TEXTAREA') {
+        autoGrowTextarea(inputEl);
+      }
     });
-   
-    autoGrowTextarea(inputEl);
-    updateSendButtonState();
   }
 
-
-  if (hamburger && sidebar) {
+  if (hamburger) {
     hamburger.addEventListener('click', () => {
       sidebar.classList.toggle('open');
     });
   }
 
-  if (sidebarCloseBtn && sidebar) {
+  if (sidebarCloseBtn) {
     sidebarCloseBtn.addEventListener('click', () => {
       sidebar.classList.remove('open');
     });
   }
 
-  
-  document.addEventListener('click', (event) => {
-    if (!sidebar) return;
-    if (!sidebar.classList.contains('open')) return;
-    const target = event.target;
-    const clickedInsideSidebar = sidebar.contains(target);
-    const clickedHamburger = hamburger && hamburger.contains(target);
-    const clickedCloseButton = sidebarCloseBtn && sidebarCloseBtn.contains(target);
-    if (!clickedInsideSidebar && !clickedHamburger && !clickedCloseButton) {
+  document.addEventListener('click', (e) => {
+    if (!sidebar.contains(e.target) && !hamburger.contains(e.target) && !sidebarCloseBtn.contains(e.target)) {
       sidebar.classList.remove('open');
+    }
+    if (!profileMenu.contains(e.target) && !profileImage.contains(e.target)) {
+      profileMenu.classList.remove('open');
+    }
+    if (!attachmentMenu.contains(e.target) && !attachTrigger.contains(e.target)) {
+      attachmentMenu.classList.remove('open');
     }
   });
 
- 
-  if (profileImage && profileMenu) {
-    const toggleProfileMenu = (show) => {
-      if (show === undefined) {
-        profileMenu.classList.toggle('open');
-      } else if (show) {
-        profileMenu.classList.add('open');
-      } else {
-        profileMenu.classList.remove('open');
-      }
-    };
-
-    profileImage.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleProfileMenu();
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!profileMenu.classList.contains('open')) return;
-      const target = e.target;
-      const inside = profileMenu.contains(target) || profileImage.contains(target);
-      if (!inside) toggleProfileMenu(false);
+  if (profileImage) {
+    profileImage.addEventListener('click', () => {
+      profileMenu.classList.toggle('open');
     });
   }
 
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
-      alert("Can't log you out right now");
+      alert('Cannot log you out right now');
+      profileMenu.classList.remove('open');
     });
   }
-
- 
-  const THEME_KEY = 'aichat.theme.v1';
-  const applyTheme = (theme) => {
-    const body = document.body;
-    if (theme === 'light') {
-      body.classList.add('theme-light');
-      if (themeToggleBtn) themeToggleBtn.textContent = 'Switch to Dark mode';
-    } else {
-      body.classList.remove('theme-light');
-      if (themeToggleBtn) themeToggleBtn.textContent = 'Switch to Light mode';
-    }
-  };
-
-  const savedTheme = localStorage.getItem(THEME_KEY) || 'dark';
-  applyTheme(savedTheme);
 
   if (themeToggleBtn) {
     themeToggleBtn.addEventListener('click', () => {
@@ -190,6 +154,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  if (modelDropdown) {
+    modelDropdown.addEventListener('change', (e) => {
+      currentModel = e.target.value;
+    });
+  }
 
   let recognition = null;
   let isListening = false;
@@ -197,110 +166,50 @@ document.addEventListener('DOMContentLoaded', () => {
   let speechFinalText = '';
   let userRequestedStop = false;
   let inactivityTimerId = null;
-  const SPEECH_INACTIVITY_MS = 5000;
 
   function ensureRecognition() {
-    if (recognition) return recognition;
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return null;
-    recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';
-    recognition.interimResults = true;
-    recognition.continuous = true;
-
-    recognition.onstart = () => {
-      isListening = true;
-      if (micIcon) {
-        micIcon.classList.add('recording');
-        micIcon.classList.remove('fa-microphone');
-        micIcon.classList.add('fa-stop');
-      }
-      if (micVisual) micVisual.classList.add('active');
-      if (inputEl) speechBaseValue = inputEl.value || '';
-      speechFinalText = '';
-      scheduleInactivityStop();
-    };
-
-    recognition.onerror = () => {
-      isListening = false;
-      if (micIcon) {
-        micIcon.classList.remove('recording');
-        micIcon.classList.remove('fa-stop');
-        micIcon.classList.add('fa-microphone');
-      }
-      if (micVisual) micVisual.classList.remove('active');
-    };
-
-    recognition.onend = () => {
-      // If not explicitly stopped and we were listening, restart until inactivity timeout fires
-      if (!userRequestedStop && isListening) {
-        try { recognition.start(); } catch (_) {}
-        return;
-      }
-      isListening = false;
-      if (micIcon) {
-        micIcon.classList.remove('recording');
-        micIcon.classList.remove('fa-stop');
-        micIcon.classList.add('fa-microphone');
-      }
-      if (micVisual) micVisual.classList.remove('active');
-      clearInactivityStop();
-      updateSendButtonState();
-    };
-
-    recognition.onresult = (event) => {
-      if (!inputEl) return;
-      let interimTranscript = '';
-      let finalTranscript = '';
-      for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        const result = event.results[i];
-        if (result.isFinal) finalTranscript += result[0].transcript;
-        else interimTranscript += result[0].transcript;
-      }
-      // Accumulate only new final text, and render base + (final + interim)
-      if (finalTranscript) speechFinalText += finalTranscript;
-      const suffix = (speechFinalText + (interimTranscript || '')).trimStart();
-      const display = [speechBaseValue.trim(), suffix].filter(Boolean).join(' ').replace(/\s+/g, ' ');
-      inputEl.value = display;
-      autoGrowTextarea(inputEl);
-      updateSendButtonState();
-      scheduleInactivityStop();
-    };
-    return recognition;
-  }
-
-  function autoGrowTextarea(el) {
-    if (!el || el.tagName !== 'TEXTAREA') return;
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+    if (recognition) return;
+    try {
+      recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+    } catch (e) {
+      console.error('Speech recognition not supported:', e);
+    }
   }
 
   if (micIcon) {
     micIcon.addEventListener('click', () => {
-      const rec = ensureRecognition();
-      if (!rec) {
-        alert('Voice input is not supported in this browser.');
-        return;
-      }
-      try {
-        if (!isListening) {
-          userRequestedStop = false;
-          rec.start();
-        } else {
-          userRequestedStop = true;
-          rec.stop();
-        }
-      } catch (_) {
-       
+      if (!recognition) ensureRecognition();
+      if (!recognition) return;
+
+      if (isListening) {
+        userRequestedStop = true;
+        try { recognition.stop(); } catch (_) {}
+      } else {
+        startListening();
       }
     });
+  }
+
+  function startListening() {
+    if (!recognition) return;
+    isListening = true;
+    speechBaseValue = inputEl.value;
+    speechFinalText = '';
+    userRequestedStop = false;
+    micIcon.classList.remove('fa-microphone');
+    micIcon.classList.add('fa-stop', 'recording');
+    micVisual.classList.add('active');
+    recognition.start();
   }
 
   function scheduleInactivityStop() {
     clearInactivityStop();
     inactivityTimerId = setTimeout(() => {
       if (recognition && isListening) {
-        userRequestedStop = true; // prevent auto-restart
+        userRequestedStop = true;
         try { recognition.stop(); } catch (_) {}
       }
     }, SPEECH_INACTIVITY_MS);
@@ -316,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (attachTrigger && attachmentMenu) {
     attachTrigger.addEventListener('click', (e) => {
       e.stopPropagation();
-      const isOpen = attachmentMenu.classList.toggle('open');
+      attachmentMenu.classList.toggle('open');
     });
 
     document.addEventListener('click', (e) => {
@@ -338,7 +247,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (driveBtn) {
     driveBtn.addEventListener('click', () => {
-      console.log('Add from drive clicked');
       attachmentMenu && attachmentMenu.classList.remove('open');
     });
   }
@@ -347,12 +255,10 @@ document.addEventListener('DOMContentLoaded', () => {
     fileInput.addEventListener('change', () => {
       const files = Array.from(fileInput.files || []);
       if (!files.length) return;
-      console.log('Selected files:', files.map(f => ({ name: f.name, size: f.size })));
       attachmentMenu && attachmentMenu.classList.remove('open');
     });
   }
 
- 
   if (newChatBtn) {
     newChatBtn.addEventListener('click', () => {
       const convo = createNewConversation();
@@ -371,23 +277,101 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
- 
-  function handleSendMessage(message) {
-    
-    appendAssistantMessage(''); 
-    const placeholderNode = chatEl?.lastElementChild?.querySelector('.bubble');
-    setTimeout(() => {
-      const reply = generateLocalAssistantReply(message);
-      if (placeholderNode) placeholderNode.textContent = reply;
-      addMessageToConversation(activeConversationId, { role: 'assistant', content: reply });
+  async function handleSendMessage(message) {
+    try {
+      appendMessage('assistant', 'Thinking...');
+      
+      const conversation = conversations.find(c => c.id === activeConversationId);
+      const messageHistory = conversation?.messages || [];
+      
+      const apiMessages = [
+        { role: 'system', content: 'You are a helpful Web3 assistant. Format your responses professionally like ChatGPT and Claude:\n\n# Main Topic\n\n## Key Points\n\n• **Important terms** in bold\n• Clear bullet points\n• Concise explanations\n\n## Details\n\nProvide structured information with proper headings, bullet points, and emphasis on key concepts. Use markdown formatting consistently.' },
+        ...messageHistory.map(m => ({ role: m.role, content: m.content })),
+        { role: 'user', content: message }
+      ];
+      
+      const response = await fetch(OPENROUTER_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'AIChatbot'
+        },
+        body: JSON.stringify({
+          model: currentModel,
+          messages: apiMessages,
+          max_tokens: 1000,
+          temperature: 0.7
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Response:', response.status, errorText);
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      const aiReply = data.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
+      
+      if (chatEl?.lastElementChild) {
+        chatEl.removeChild(chatEl.lastElementChild);
+      }
+      
+      addMessageToConversation(activeConversationId, { role: 'assistant', content: aiReply });
+      appendMessage('assistant', aiReply);
       persistConversations();
-      scrollChatToBottom();
-    }, 500);
+      
+    } catch (error) {
+      console.error('OpenRouter API error:', error);
+      
+      if (chatEl?.lastElementChild) {
+        chatEl.removeChild(chatEl.lastElementChild);
+      }
+      
+      const errorMessage = `Error: ${error.message}. Please check the console for details.`;
+      appendMessage('assistant', errorMessage);
+      
+      addMessageToConversation(activeConversationId, { role: 'assistant', content: errorMessage });
+      persistConversations();
+    }
+    
+    scrollChatToBottom();
   }
 
-  function generateLocalAssistantReply(userMessage) {
-   
-    return `You said: "${userMessage}"`;
+  function parseMarkdown(text) {
+    if (!text) return '';
+    
+    let result = text
+      .replace(/^###\s+(.*?)$/gim, '<h3>$1</h3>')
+      .replace(/^##\s+(.*?)$/gim, '<h2>$1</h2>')
+      .replace(/^#\s+(.*?)$/gim, '<h1>$1</h1>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/__(.*?)__/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/_(.*?)_/g, '<em>$1</em>')
+      .replace(/^[\s]*•\s+(.*?)$/gim, '<li>$1</li>')
+      .replace(/^[\s]*\-\s+(.*?)$/gim, '<li>$1</li>')
+      .replace(/^[\s]*\*\s+(.*?)$/gim, '<li>$1</li>')
+      .replace(/^[\s]*\d+\.\s+(.*?)$/gim, '<li>$1</li>')
+      .replace(/\n\s*\n/g, '</p><p>')
+      .replace(/^([^<].*?)$/gm, (match, content) => {
+        if (!content.trim() || content.includes('<h') || content.includes('<li>')) {
+          return content;
+        }
+        return `<p>${content}</p>`;
+      })
+      .replace(/<p><\/p>/g, '')
+      .replace(/<p><br><\/p>/g, '')
+      .replace(/<p>\s*<\/p>/g, '')
+      .replace(/(<li>.*?<\/li>(\s*<li>.*?<\/li>)*)/gs, '<ul>$1</ul>')
+      .replace(/>\s+</g, '><')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    return result;
   }
 
   function updateSendButtonState() {
@@ -427,7 +411,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const bubble = document.createElement('div');
     bubble.className = 'bubble';
-    bubble.textContent = text;
+    
+    if (role === 'assistant') {
+      bubble.innerHTML = parseMarkdown(text);
+    } else {
+      bubble.textContent = text;
+    }
 
     if (role === 'assistant') {
       wrapper.appendChild(avatar);
@@ -445,7 +434,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!chatEl) return;
     chatEl.scrollTop = chatEl.scrollHeight;
   }
-
 
   function loadConversations() {
     try {
@@ -513,55 +501,117 @@ document.addEventListener('DOMContentLoaded', () => {
 
       item.appendChild(title);
       item.appendChild(del);
+      sidebarList.appendChild(item);
 
       item.addEventListener('click', () => {
         activeConversationId = convo.id;
         renderConversationToChat(convo);
         startChatIfNeeded();
+        sidebar.classList.remove('open');
       });
-
-      sidebarList.appendChild(item);
     });
   }
 
   function deleteConversation(conversationId) {
-    const idx = conversations.findIndex(c => c.id === conversationId);
-    if (idx === -1) return;
-    conversations.splice(idx, 1);
+    conversations = conversations.filter(c => c.id !== conversationId);
     if (activeConversationId === conversationId) {
-      if (conversations.length) {
-        activeConversationId = conversations[0].id;
-        renderConversationToChat(conversations[0]);
-        startChatIfNeeded();
-      } else {
+      activeConversationId = conversations.length ? conversations[0].id : null;
+      if (!activeConversationId) {
         activeConversationId = createNewConversation().id;
-        clearChatUI();
-        if (helpEl) helpEl.style.display = '';
       }
+      clearChatUI();
+      if (helpEl) helpEl.style.display = '';
+      if (chatEl) chatEl.style.display = 'none';
     }
     persistConversations();
     renderSidebar();
-    const active = conversations.find(c => c.id === activeConversationId);
-    if (active && active.messages.length) {
-      renderConversationToChat(active);
-      startChatIfNeeded();
-    } else {
-      clearChatUI();
-    }
   }
 
   function clearChatUI() {
-    if (chatEl) chatEl.innerHTML = '';
+    if (!chatEl) return;
+    chatEl.innerHTML = '';
   }
 
   function renderConversationToChat(convo) {
+    if (!chatEl) return;
     clearChatUI();
-    if (!convo || !chatEl) return;
-    convo.messages.forEach(m => {
-      if (m.role === 'user') appendUserMessage(m.content);
-      else appendAssistantMessage(m.content);
+    convo.messages.forEach(msg => {
+      appendMessage(msg.role, msg.content);
     });
-    if (convo.messages.length) startChatIfNeeded();
+  }
+
+  if (ensureRecognition) {
+    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      isListening = true;
+      micVisual.classList.add('active');
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      isListening = false;
+      micIcon.classList.remove('fa-stop', 'recording');
+      micIcon.classList.add('fa-microphone');
+      micVisual.classList.remove('active');
+    };
+
+    recognition.onend = () => {
+      isListening = false;
+      micIcon.classList.remove('fa-stop', 'recording');
+      micIcon.classList.add('fa-microphone');
+      micVisual.classList.remove('active');
+      if (!userRequestedStop) {
+        setTimeout(() => startListening(), 100);
+      }
+    };
+
+    recognition.onresult = (event) => {
+      let interimTranscript = '';
+      let finalTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      const newValue = [speechBaseValue, speechFinalText, finalTranscript, interimTranscript].filter(Boolean).join(' ');
+      inputEl.value = newValue;
+      speechFinalText = finalTranscript;
+      updateSendButtonState();
+      if (inputEl.tagName === 'TEXTAREA') {
+        autoGrowTextarea(inputEl);
+      }
+      clearInactivityStop();
+      scheduleInactivityStop();
+    };
+  }
+
+  function autoGrowTextarea(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+
+  const savedTheme = localStorage.getItem(THEME_KEY);
+  if (savedTheme) {
+    applyTheme(savedTheme);
+  }
+
+  function applyTheme(theme) {
+    document.body.classList.remove('theme-light', 'theme-dark');
+    document.body.classList.add(`theme-${theme}`);
+    
+    const btn = themeToggleBtn;
+    if (btn) {
+      btn.textContent = theme === 'light' ? 'Switch to Dark mode' : 'Switch to Light mode';
+    }
   }
 });
 

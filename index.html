@@ -16,10 +16,12 @@
         <h1>AIChatbot</h1>
             <div class="model-selector">
                 <select class="model-dropdown">
-                    <option value="openchat">OpenChat</option>
-                    <option value="mistral">Mistral</option>
-                    <option value="gpt4">GPT-4</option>
-                    <option value="claude">Claude</option>
+                    <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                    <option value="openai/gpt-4o">GPT-4o</option>
+                    <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+                    <option value="meta-llama/llama-3.1-8b-instruct">Llama 3.1 8B</option>
+                    <option value="meta-llama/llama-3.1-70b-instruct">Llama 3.1 70B</option>
+                    <option value="mistralai/mistral-7b-instruct">Mistral 7B</option>
                 </select>
                 <i class="fas fa-chevron-down"></i>
             </div>
@@ -40,14 +42,14 @@
 <aside class="sidebar">
     <div class="sidebar-header">
         <span>Chats</span>
-        <button class="new-chat-btn" aria-label="Create new chat">
+        <button class="new-chat-btn">
             <i class="fas fa-plus"></i>
             <span>New chat</span>
         </button>
     </div>
-    <div class="sidebar-list" role="list"></div>
+    <div class="sidebar-list"></div>
  </aside>
- <button class="sidebar-close" title="Close sidebar">
+ <button class="sidebar-close">
      <i class="fas fa-xmark"></i>
  </button>
 
@@ -135,7 +137,7 @@
             <span class="label">Listening...</span>
         </div>
         <div class="search-bar">
-            <button class="attach-trigger" title="Add">
+            <button class="attach-trigger">
                 <i class="fas fa-plus"></i>
             </button>
             <input type="file" id="file-input" multiple hidden>
