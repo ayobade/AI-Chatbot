@@ -299,11 +299,11 @@ document.addEventListener('DOMContentLoaded', () => {
         })
       });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Response:', response.status, errorText);
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-      }
+             if (!response.ok) {
+         const errorText = await response.text();
+         console.error('API Response:', response.status, errorText);
+         throw new Error('Unable to get response from AI service. Please try switching to a different AI model and try again.');
+       }
       
       const data = await response.json();
       
@@ -324,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatEl.removeChild(chatEl.lastElementChild);
       }
       
-      const errorMessage = `Error: ${error.message}. Please try switching to a different AI model and try again. `;
+             const errorMessage = `Unable to get response. Please try switching to a different AI model and try again.`;
       appendMessage('assistant', errorMessage);
       
       addMessageToConversation(activeConversationId, { role: 'assistant', content: errorMessage });
